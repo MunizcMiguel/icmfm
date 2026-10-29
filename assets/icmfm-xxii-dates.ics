@@ -1,0 +1,15 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//ICMFM XXII//Gijon 2027//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:icmfm-xxii-2027@icmfm22.org
+DTSTAMP:20261029T120000Z
+DTSTART;VALUE=DATE:20270908
+DTEND;VALUE=DATE:20270911
+SUMMARY:ICMFM XXII - International Colloquium on Mechanical Fatigue of Metals
+LOCATION:Universidad Laboral de Gijon\, Gijon\, Spain
+DESCRIPTION:XXII International Colloquium on Mechanical Fatigue of Metals. https://munizcmiguel.github.io/icmfm/
+URL:https://munizcmiguel.github.io/icmfm/
+END:VEVENT
+END:VCALENDAR
