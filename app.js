@@ -32,15 +32,16 @@
   };
 
   const DATES = [
-    { iso: "2026-12-01", label: "Call for abstracts opens · templates available" },
-    { iso: "2027-01-31", label: "Special session proposals deadline" },
-    { iso: "2027-02-01", label: "Registration opens" },
-    { iso: "2027-02-28", label: "Abstract submission deadline", key: true },
-    { iso: "2027-03-31", label: "Notification of abstract acceptance", key: true },
-    { iso: "2027-05-15", label: "Early-bird registration deadline", key: true },
-    { iso: "2027-05-31", label: "Full paper submission (optional)", key: true },
-    { iso: "2027-07-15", label: "Final programme published" },
-    { iso: "2027-09-08", end: "2027-09-10", label: "ICMFM XXII Colloquium in Gijón", main: true, key: true },
+    // kind: "open" (something opens or is published), "deadline", "main" (the colloquium itself)
+    { iso: "2027-01-10", label: "Call for abstracts opens · templates available", kind: "open" },
+    { iso: "2027-01-31", label: "Special session proposals deadline", kind: "deadline" },
+    { iso: "2027-02-01", label: "Registration opens", kind: "open" },
+    { iso: "2027-02-28", label: "Abstract submission deadline", kind: "deadline", key: true },
+    { iso: "2027-03-31", label: "Notification of abstract acceptance", kind: "open", key: true },
+    { iso: "2027-05-15", label: "Early-bird registration deadline", kind: "deadline", key: true },
+    { iso: "2027-05-31", label: "Full paper submission (optional)", kind: "deadline", key: true },
+    { iso: "2027-07-15", label: "Final programme published", kind: "open" },
+    { iso: "2027-09-08", end: "2027-09-10", label: "ICMFM XXII Colloquium in Gijón", kind: "main", main: true, key: true },
   ];
 
   const TOPICS = [
@@ -141,6 +142,49 @@
     </div>
     ${items.map((x) => `<div role="tabpanel" id="panel-${viewId}-${x.id}" aria-labelledby="tab-${viewId}-${x.id}" tabindex="0" hidden>${x.html}</div>`).join("")}`;
 
+  /* Year planner: one month grid per month from January to September 2027, Monday first. */
+  const KIND_LABEL = { open: "Opening or publication", deadline: "Deadline", main: "Colloquium" };
+  const calendar = () => {
+    const y = 2027;
+    const st = timelineState();
+    const key = (yy, m, dd) => `${yy}-${String(m + 1).padStart(2, "0")}-${String(dd).padStart(2, "0")}`;
+    const byDay = new Map();
+    st.forEach((d) => {
+      for (let x = day(d.iso); x <= day(d.end || d.iso); x.setDate(x.getDate() + 1)) byDay.set(key(x.getFullYear(), x.getMonth(), x.getDate()), d);
+    });
+    const short = (iso) => fmt(iso, { day: "numeric", month: "short" });
+    const weekdays = [["Monday", "M"], ["Tuesday", "T"], ["Wednesday", "W"], ["Thursday", "T"], ["Friday", "F"], ["Saturday", "S"], ["Sunday", "S"]];
+    const month = (m) => {
+      const first = (new Date(y, m, 1).getDay() + 6) % 7;
+      const days = new Date(y, m + 1, 0).getDate();
+      const cells = [...Array(first).fill(null), ...Array.from({ length: days }, (_, i) => i + 1)];
+      while (cells.length % 7) cells.push(null);
+      const rows = [];
+      for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7));
+      const name = new Date(y, m, 1).toLocaleDateString("en-GB", { month: "long" });
+      const events = st.filter((d) => day(d.iso).getMonth() === m && day(d.iso).getFullYear() === y);
+      return `<div class="cal-month${events.length ? " has-events" : ""}">
+        <table class="cal">
+          <caption>${name} <span>${y}</span></caption>
+          <thead><tr>${weekdays.map(([a, b]) => `<th scope="col"><abbr title="${a}">${b}</abbr></th>`).join("")}</tr></thead>
+          <tbody>${rows.map((w) => `<tr>${w.map((dd) => {
+            if (!dd) return "<td></td>";
+            const ev = byDay.get(key(y, m, dd));
+            if (!ev) return `<td>${dd}</td>`;
+            const cls = ["ev", `ev-${ev.kind}`, ev.past ? "is-past" : "", ev.next ? "is-next" : ""].filter(Boolean).join(" ");
+            return `<td class="${cls}" title="${esc(ev.label)}">${dd}<span class="visually-hidden">: ${esc(ev.label)}</span></td>`;
+          }).join("")}</tr>`).join("")}</tbody>
+        </table>
+        ${events.length ? `<ul class="cal-events">${events.map((d) => `<li class="ev-${d.kind}${d.past ? " is-past" : ""}"><span class="dot" aria-hidden="true"></span><span>${d.end ? `${t(d.iso, String(day(d.iso).getDate()))}–${t(d.end, short(d.end))}` : t(d.iso, short(d.iso))} · ${esc(d.label)}${d.next ? ' <span class="badge badge-next">Next</span>' : ""}${d.past ? ' <span class="badge badge-past">Closed</span>' : ""}</span></li>`).join("")}</ul>` : ""}
+      </div>`;
+    };
+    return `
+      <ul class="cal-legend" aria-label="Legend">
+        ${Object.entries(KIND_LABEL).map(([k, l]) => `<li class="ev-${k}"><span class="dot" aria-hidden="true"></span>${l}</li>`).join("")}
+      </ul>
+      <div class="cal-grid">${Array.from({ length: 9 }, (_, m) => month(m)).join("")}</div>`;
+  };
+
   /* ---------------- Views (one window each, same order as the top menu) ---------------- */
   const VIEWS = [
     { id: "home", label: "Welcome", title: "Welcome", render: () => {
@@ -235,12 +279,7 @@
     { id: "dates", label: "Important dates", title: "Important dates", render: () => `
       ${pageHead("Important dates", "All deadlines close at 23:59 Madrid time (CET in winter, CEST in summer) on the date shown.")}
       <div class="card">
-        <ol class="timeline">
-          ${timelineState().map((d) => `<li class="${d.main ? "is-main" : ""} ${d.past ? "is-past" : ""} ${d.next ? "is-next" : ""}">
-            <span class="tl-date">${d.end ? tRange(d.iso, d.end) : t(d.iso, fmt(d.iso, { weekday: "long", day: "numeric", month: "long", year: "numeric" }))}</span>
-            <span class="tl-label">${esc(d.label)}</span>${d.next ? '<span class="badge badge-next">Next</span>' : ""}${d.past ? '<span class="badge badge-past">Closed</span>' : ""}
-          </li>`).join("")}
-        </ol>
+        ${calendar()}
         <div class="btn-row"><a class="btn btn-soft" href="assets/icmfm-xxii-dates.ics" download>${icon("download")}Add the colloquium to your calendar (.ics)</a></div>
       </div>` },
 
@@ -283,7 +322,7 @@
           </div>` },
         { id: "abstract", label: "Abstract submission", html: `
           <div class="card">
-            ${notice(`The call for abstracts opens on ${t("2026-12-01")}. The official abstract and paper templates (Word and LaTeX) will be available here from that date.`)}
+            ${notice(`The call for abstracts opens on ${t("2027-01-10")}. The official abstract and paper templates (Word and LaTeX) will be available here from that date.`)}
             <ol class="steps">
               <li><strong>Prepare</strong> a one-page abstract in English using the official template.</li>
               <li><strong>Export</strong> it as PDF and name the file <code>ICMFM22_Surname_Abstract.pdf</code>.</li>
