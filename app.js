@@ -406,21 +406,8 @@
   const view = $("#view");
   const topnav = $("#topnav");
   const navList = $("#navList");
-  const menuBtn = $("#menuToggle");
-  const mqCompact = matchMedia("(max-width: 1180px)");
+  const navOffset = () => (getComputedStyle(topnav).position === "sticky" ? topnav.offsetHeight : 0) + 8;
   let countdownTimer = null;
-
-  /* ---------------- Compact menu (disclosure) ---------------- */
-  const setMenu = (open, returnFocus = false) => {
-    navList.classList.toggle("is-open", open);
-    menuBtn.setAttribute("aria-expanded", String(open));
-    if (!open && returnFocus) menuBtn.focus();
-  };
-  menuBtn.addEventListener("click", () => setMenu(!navList.classList.contains("is-open")));
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && navList.classList.contains("is-open")) setMenu(false, true); });
-  document.addEventListener("click", (e) => { if (navList.classList.contains("is-open") && !topnav.contains(e.target)) setMenu(false); });
-  navList.addEventListener("click", (e) => { if (e.target.closest("a")) setMenu(false); });
-  mqCompact.addEventListener("change", () => setMenu(false));
 
   /* Square off the menu bar once it sticks to the top of the viewport. */
   const onScroll = () => topnav.classList.toggle("is-stuck", topnav.getBoundingClientRect().top <= 0 && window.scrollY > 0);
@@ -534,7 +521,7 @@
       if (selectTab) selectTab(r.sub);
       if (focus) {
         const list = view.querySelector('[role="tablist"]');
-        const top = list.getBoundingClientRect().top + window.scrollY - topnav.offsetHeight - 8;
+        const top = list.getBoundingClientRect().top + window.scrollY - navOffset();
         window.scrollTo({ top, behavior: "instant" });
         list.querySelector('[aria-selected="true"]').focus({ preventScroll: true });
       }
@@ -550,10 +537,9 @@
     if (v.id === "home") startCountdown(); else clearInterval(countdownTimer);
     wireTabs(v.id, r.sub);
     wireExtras();
-    setMenu(false);
     if (focus) {
       // Bring the new window into view just below the sticky menu, without jumping above the masthead fold.
-      const top = $("#main").getBoundingClientRect().top + window.scrollY - topnav.offsetHeight - 8;
+      const top = $("#main").getBoundingClientRect().top + window.scrollY - navOffset();
       if (window.scrollY > top) window.scrollTo({ top, behavior: "instant" });
       view.querySelector("h1")?.focus({ preventScroll: true });
     }
