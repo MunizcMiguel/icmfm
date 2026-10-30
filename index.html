@@ -24,7 +24,7 @@
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <link rel="preload" href="assets/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/source-serif-4-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="styles.css?v=20261030">
+  <link rel="stylesheet" href="styles.css?v=20261030b">
   <script>document.documentElement.classList.remove("no-js");</script>
   <script type="application/ld+json">
   {
@@ -73,6 +73,12 @@
         <li><a href="#/accommodation" data-id="accommodation">Accommodation</a></li>
         <li><a href="#/contact" data-id="contact">Contact</a></li>
       </ul>
+      <div class="nav-more" id="navMore" hidden>
+        <button class="more-btn" id="moreBtn" type="button" aria-expanded="false" aria-controls="moreList">
+          More<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="14" height="14"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <ul class="more-list" id="moreList" hidden></ul>
+      </div>
     </div>
   </nav>
 
@@ -124,6 +130,6 @@
     </div>
     <p class="footer-base">© 2026 ICMFM XXII Organising Committee · University of Oviedo</p>
   </footer>
-  <script src="app.js?v=20261030" defer></script>
+  <script src="app.js?v=20261030b" defer></script>
 </body>
 </html>

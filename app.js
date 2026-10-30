@@ -448,6 +448,37 @@
   const navOffset = () => (getComputedStyle(topnav).position === "sticky" ? topnav.offsetHeight : 0) + 8;
   let countdownTimer = null;
 
+  /* ---------------- Single-row menu with a "More" overflow ---------------- */
+  const navMore = $("#navMore");
+  const moreBtn = $("#moreBtn");
+  const moreList = $("#moreList");
+  const navItems = [...navList.children];
+  const setMore = (open, returnFocus = false) => {
+    moreList.hidden = !open;
+    moreBtn.setAttribute("aria-expanded", String(open));
+    if (!open && returnFocus) moreBtn.focus();
+  };
+  const markMore = () => moreBtn.classList.toggle("is-current", !!moreList.querySelector('[aria-current="page"]'));
+  // Put every item back in the bar, then move the last ones into "More" until the bar fits on one line.
+  const fitNav = () => {
+    const hadFocus = moreList.contains(document.activeElement);
+    navItems.forEach((li) => navList.appendChild(li));
+    navMore.hidden = true;
+    if (navList.scrollWidth > navList.clientWidth + 1) {
+      navMore.hidden = false;
+      while (navList.children.length > 1 && navList.scrollWidth > navList.clientWidth + 1) moreList.prepend(navList.lastElementChild);
+    }
+    if (navMore.hidden || !moreList.children.length) { navMore.hidden = true; setMore(false, hadFocus); }
+    markMore();
+  };
+  moreBtn.addEventListener("click", () => setMore(moreList.hidden));
+  moreList.addEventListener("click", (e) => { if (e.target.closest("a")) setMore(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !moreList.hidden) setMore(false, true); });
+  document.addEventListener("click", (e) => { if (!moreList.hidden && !navMore.contains(e.target)) setMore(false); });
+  navMore.addEventListener("focusout", (e) => { if (!navMore.contains(e.relatedTarget) && e.relatedTarget) setMore(false); });
+  new ResizeObserver(fitNav).observe(topnav);
+  document.fonts?.ready.then(fitNav);
+
   /* Square off the menu bar once it sticks to the top of the viewport. */
   const onScroll = () => topnav.classList.toggle("is-stuck", topnav.getBoundingClientRect().top <= 0 && window.scrollY > 0);
   window.addEventListener("scroll", onScroll, { passive: true });
@@ -571,7 +602,9 @@
     view.innerHTML = v.render() + pager(idx);
     view.classList.remove("is-entering"); void view.offsetWidth; view.classList.add("is-entering");
     document.title = `${v.id === "home" ? "" : v.title + " · "}${CONF.short} · Gijón 2027`;
-    navList.querySelectorAll("a").forEach((a) => (a.dataset.id === v.id ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current")));
+    navItems.forEach((li) => { const a = li.firstElementChild; a.dataset.id === v.id ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"); });
+    markMore();
+    setMore(false);
 
     if (v.id === "home") startCountdown(); else clearInterval(countdownTimer);
     wireTabs(v.id, r.sub);
