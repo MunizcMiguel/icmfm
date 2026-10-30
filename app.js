@@ -31,6 +31,19 @@
     },
   };
 
+  /* Carousel photos (Wikimedia Commons, cropped to 16:7). Files: assets/img/slides/<slug>-1600.webp and -800.webp */
+  const SLIDES = {
+    "cimadevilla": { caption: "Cimadevilla and the old harbour", alt: "The fishermen's quarter of Cimadevilla rising above the old harbour of Gijón", artist: "FDV", license: "CC BY-SA 3.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/3.0/", page: "https://commons.wikimedia.org/wiki/File:Cimadevilla-261213.jpg" },
+    "laboral-patio": { caption: "Courtyard of the Universidad Laboral", alt: "The great courtyard of the Universidad Laboral with its church and tall tower under a bright sky", artist: "Torres05", license: "CC0", licenseUrl: "https://creativecommons.org/publicdomain/zero/1.0/", page: "https://commons.wikimedia.org/wiki/File:Patio_de_la_Universidad_Laboral_de_Gij%C3%B3n_desde_la_biblioteca.jpg" },
+    "san-lorenzo": { caption: "San Lorenzo beach", alt: "Waves on the long sandy beach of San Lorenzo, with the seafront promenade and city buildings", artist: "Mentxuwiki", license: "CC BY-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/", page: "https://commons.wikimedia.org/wiki/File:Playa_de_San_Lorenzo_en_Gij%C3%B3n_2.jpg" },
+    "elogio": { caption: "Elogio del Horizonte, by Eduardo Chillida", alt: "Chillida's concrete sculpture Elogio del Horizonte on top of the Santa Catalina headland", artist: "David Álvarez López", license: "CC BY 2.0", licenseUrl: "https://creativecommons.org/licenses/by/2.0/", page: "https://commons.wikimedia.org/wiki/File:Elogio_del_Horizonte._Gij%C3%B3n_(2).jpg" },
+    "laboral-noche": { caption: "Universidad Laboral at dusk", alt: "Illuminated arcades and the tower of the Universidad Laboral seen from its gardens at dusk", artist: "Victorcamblorprieto", license: "CC BY-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/", page: "https://commons.wikimedia.org/wiki/File:Universidad_Laboral_de_Gij%C3%B3n_desde_los_jardines.jpg" },
+    "puerto": { caption: "The marina at sunset", alt: "Sailing boats moored in Gijón marina, reflected in calm water at sunset", artist: "David Álvarez López", license: "CC BY 2.0", licenseUrl: "https://creativecommons.org/licenses/by/2.0/", page: "https://commons.wikimedia.org/wiki/File:Puerto_deportivo._Gij%C3%B3n.jpg" },
+    "laboral-torre": { caption: "Universidad Laboral, the colloquium venue", alt: "The monumental sandstone complex of the Universidad Laboral with its central tower", artist: "David Álvarez López", license: "CC BY 2.0", licenseUrl: "https://creativecommons.org/licenses/by/2.0/", page: "https://commons.wikimedia.org/wiki/File:Universidad_Laboral._Gij%C3%B3n.jpg" },
+    "laboral-fachada": { caption: "Main façade of the Universidad Laboral", alt: "Columned façade of the Universidad Laboral crowned by a sculpted coat of arms", artist: "Superchilum", license: "CC BY-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/", page: "https://commons.wikimedia.org/wiki/File:Universidad_Laboral_de_Gij%C3%B3n_07.jpg" },
+    "laboral-vista": { caption: "The Universidad Laboral and the Asturian hills", alt: "Distant view of the Universidad Laboral and its tower against green hills", artist: "David Álvarez López", license: "CC BY 2.0", licenseUrl: "https://creativecommons.org/licenses/by/2.0/", page: "https://commons.wikimedia.org/wiki/File:Panoramica-universidad-laboral.jpg" },
+  };
+
   const DATES = [
     // kind: "open" (something opens or is published), "deadline", "main" (the colloquium itself)
     { iso: "2027-01-10", label: "Call for abstracts opens · templates available", kind: "open" },
@@ -99,6 +112,10 @@
     book: '<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2Z"/><path d="M4 19V5"/>',
     download: '<path d="M12 4v12M7 11l5 5 5-5"/><path d="M4 20h16"/>',
     home: '<path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
+    chevL: '<path d="M15 5l-7 7 7 7"/>',
+    chevR: '<path d="M9 5l7 7-7 7"/>',
+    pause: '<path d="M9 5v14M15 5v14"/>',
+    play: '<path d="M7 4.5v15l12-7.5Z"/>',
   };
   const icon = (n) => `<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">${I[n]}</svg>`;
 
@@ -185,15 +202,88 @@
       <div class="cal-grid">${Array.from({ length: 9 }, (_, m) => month(m)).join("")}</div>`;
   };
 
+  /* Accessible auto-rotating carousel (WAI-ARIA APG pattern): pauses on hover/focus, has a pause button, no autoplay with reduced motion. */
+  const carousel = (id, label, slugs, eager = false) => `
+    <section class="carousel" id="${id}" aria-roledescription="carousel" aria-label="${esc(label)}">
+      <div class="car-track" aria-live="off">
+        ${slugs.map((s, i) => { const p = SLIDES[s]; return `
+        <figure class="car-slide${i === 0 ? " is-active" : ""}" role="group" aria-roledescription="slide" aria-label="${i + 1} of ${slugs.length}"${i ? " hidden" : ""}>
+          <img src="assets/img/slides/${s}-1600.webp" srcset="assets/img/slides/${s}-800.webp 800w, assets/img/slides/${s}-1600.webp 1600w" sizes="(max-width: 1150px) 100vw, 1120px" width="1600" height="700" alt="${esc(p.alt)}" ${i === 0 && eager ? 'fetchpriority="high"' : 'loading="lazy"'} decoding="async">
+          <figcaption><span class="car-cap">${esc(p.caption)}</span> <a class="car-credit" href="${p.page}" target="_blank" rel="noopener">Photo: ${esc(p.artist)}, ${esc(p.license)}<span class="visually-hidden"> (opens in a new tab)</span></a></figcaption>
+        </figure>`; }).join("")}
+      </div>
+      <div class="car-ui">
+        <button class="car-play" type="button" aria-label="Pause the slide show">${icon("pause")}</button>
+        <div class="car-dots">${slugs.map((s, i) => `<button type="button" aria-label="Show photo ${i + 1}: ${esc(SLIDES[s].caption)}"${i === 0 ? ' aria-current="true"' : ""}></button>`).join("")}</div>
+      </div>
+      <button class="car-arrow car-prev" type="button" aria-label="Previous photo">${icon("chevL")}</button>
+      <button class="car-arrow car-next" type="button" aria-label="Next photo">${icon("chevR")}</button>
+    </section>`;
+
+  const carouselTimers = [];
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
+  const wireCarousels = () => {
+    carouselTimers.splice(0).forEach(clearInterval);
+    document.querySelectorAll(".carousel").forEach((root) => {
+      const slides = [...root.querySelectorAll(".car-slide")];
+      const dots = [...root.querySelectorAll(".car-dots button")];
+      const track = root.querySelector(".car-track");
+      const playBtn = root.querySelector(".car-play");
+      let i = 0;
+      let playing = !reduceMotion.matches;
+      let hold = false; // pointer over or focus inside
+      const go = (n) => {
+        const prev = slides[i];
+        i = (n + slides.length) % slides.length;
+        const cur = slides[i];
+        if (prev === cur) return;
+        cur.hidden = false;
+        cur.querySelector("img").loading = "eager";
+        void cur.offsetWidth;
+        cur.classList.add("is-active");
+        prev.classList.remove("is-active");
+        setTimeout(() => { if (!prev.classList.contains("is-active")) prev.hidden = true; }, 700);
+        dots.forEach((d, k) => (k === i ? d.setAttribute("aria-current", "true") : d.removeAttribute("aria-current")));
+        slides[(i + 1) % slides.length].querySelector("img").loading = "eager"; // warm up the next photo
+      };
+      const setPlaying = (on) => {
+        playing = on;
+        playBtn.innerHTML = icon(on ? "pause" : "play");
+        playBtn.setAttribute("aria-label", on ? "Pause the slide show" : "Play the slide show");
+        track.setAttribute("aria-live", on ? "off" : "polite");
+      };
+      setPlaying(playing);
+      root.querySelector(".car-prev").addEventListener("click", () => go(i - 1));
+      root.querySelector(".car-next").addEventListener("click", () => go(i + 1));
+      dots.forEach((d, k) => d.addEventListener("click", () => go(k)));
+      playBtn.addEventListener("click", () => setPlaying(!playing));
+      root.addEventListener("pointerenter", () => { hold = true; });
+      root.addEventListener("pointerleave", () => { hold = false; });
+      root.addEventListener("focusin", () => { hold = true; });
+      root.addEventListener("focusout", (e) => { if (!root.contains(e.relatedTarget)) hold = false; });
+      let startX = null;
+      track.addEventListener("touchstart", (e) => { startX = e.touches[0].clientX; }, { passive: true });
+      track.addEventListener("touchend", (e) => {
+        if (startX === null) return;
+        const dx = e.changedTouches[0].clientX - startX;
+        if (Math.abs(dx) > 40) go(dx < 0 ? i + 1 : i - 1);
+        startX = null;
+      });
+      slides[1]?.querySelector("img").setAttribute("loading", "eager");
+      carouselTimers.push(setInterval(() => {
+        if (playing && !hold && !document.hidden && root.offsetParent !== null) go(i + 1);
+      }, 6000));
+    });
+  };
+
   /* ---------------- Views (one window each, same order as the top menu) ---------------- */
   const VIEWS = [
     { id: "home", label: "Welcome", title: "Welcome", render: () => {
-      const p = PHOTOS.cimadevilla;
       const st = timelineState();
       return `
       <h1 class="visually-hidden" tabindex="-1">Welcome to ICMFM XXII</h1>
-      <figure class="hero">
-        <img src="${p.src}" srcset="${p.small} 800w, ${p.src} 1600w" sizes="(max-width: 1150px) 100vw, 1120px" width="${p.w}" height="${p.h}" alt="${esc(p.alt)}" fetchpriority="high">
+      <div class="hero">
+        ${carousel("car-home", "Photos of Gijón and the Universidad Laboral", ["cimadevilla", "laboral-patio", "san-lorenzo", "elogio", "laboral-noche", "puerto", "laboral-torre"], true)}
         <div class="hero-bar">
           <div>
             <p class="cd-label" id="cdLabel">The colloquium opens in</p>
@@ -204,8 +294,7 @@
             <a class="btn btn-light" href="#/dates">${icon("calendar")}Important dates</a>
           </div>
         </div>
-        <figcaption class="hero-credit">${credit(p, " (cropped)")}</figcaption>
-      </figure>
+      </div>
 
       <div class="card home-grid">
         <div class="home-main">
@@ -351,12 +440,12 @@
       ${pageHead("Venue")}
       ${tabs("venue", "Venue sections", [
         { id: "gijon", label: "Gijón and the venue", html: `
+          ${carousel("car-venue", "Photos of the Universidad Laboral and Gijón", ["laboral-torre", "laboral-fachada", "laboral-patio", "laboral-noche", "laboral-vista", "san-lorenzo", "elogio", "puerto", "cimadevilla"])}
           <div class="grid grid-2">
             <div class="card prose">
               <h2 class="card-title">Gijón, Asturias</h2>
               <p>Gijón, a city of about 270,000 people, lies on the Cantabrian coast of northern Spain. The colloquium, organised by the Polytechnic School of Engineering of Gijón (University of Oviedo), takes place at the <strong>${esc(CONF.venue)}</strong>. Built in the mid-20th century, this monumental complex is today a hub of culture, research and education.</p>
               <p>The city has three large sandy beaches and a marina in the centre, next to the historic fishermen's quarter of Cimadevilla, with its Roman baths. Almost a third of Asturias is protected natural space, with mountains rising above 2,500 m, a rugged coastline and picturesque fishing villages.</p>
-              <figure class="photo"><img src="${PHOTOS.laboral.small}" width="800" height="342" alt="${esc(PHOTOS.laboral.alt)}" loading="lazy" decoding="async"><figcaption>${credit(PHOTOS.laboral, " (cropped)")}</figcaption></figure>
             </div>
             <div class="card">
               <h2 class="card-title">Location</h2>
@@ -429,8 +518,8 @@
         <p>The site is hosted on GitHub Pages (GitHub, Inc., USA), which processes visitors' IP addresses in its server logs for security purposes, under GitHub's privacy statement and the EU–US Data Privacy Framework. The interactive map (OpenStreetMap) and the hotel links (Google Maps) only contact those services if you click them.</p>
         <h2 class="h3">Image credits</h2>
         <ul>
-          <li>Universidad Laboral de Gijón: ${credit(PHOTOS.laboral)}, cropped and toned. ${ext(PHOTOS.laboral.license, "Licence CC BY 2.0")}</li>
-          <li>Cimadevilla, Gijón: ${credit(PHOTOS.cimadevilla)}, cropped. ${ext(PHOTOS.cimadevilla.license, "Licence CC BY-SA 3.0")}</li>
+          <li>Header background, Universidad Laboral de Gijón: ${credit(PHOTOS.laboral)}, cropped and toned. ${ext(PHOTOS.laboral.license, "Licence CC BY 2.0")}</li>
+          ${Object.values(SLIDES).map((p) => `<li>${esc(p.caption)}: ${ext(p.page, `${esc(p.artist)}`, " (photo page)")}, cropped. ${ext(p.licenseUrl, `Licence ${esc(p.license)}`)}</li>`).join("")}
           <li>Social preview image (og-card.jpg): derived from “Cimadevilla” by FDV, CC BY-SA 3.0; the derivative is likewise offered under ${ext(PHOTOS.cimadevilla.license, "CC BY-SA 3.0")}.</li>
           <li>Map data © OpenStreetMap contributors, ${ext("https://opendatacommons.org/licenses/odbl/", "ODbL")}.</li>
         </ul>
@@ -609,6 +698,7 @@
     if (v.id === "home") startCountdown(); else clearInterval(countdownTimer);
     wireTabs(v.id, r.sub);
     wireExtras();
+    wireCarousels();
     if (focus) {
       // Bring the new window into view just below the sticky menu, without jumping above the masthead fold.
       const top = $("#main").getBoundingClientRect().top + window.scrollY - navOffset();
